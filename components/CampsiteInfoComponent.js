@@ -32,10 +32,10 @@ class CampsiteInfo extends Component {
     }
 
     render() {
-        const campsiteID= this.props.navigation.getParam('campsiteId');
+        const campsiteId = this.props.navigation.getParam('campsiteId');
         const campsite = this.state.campsites.filter(campsite => campsite.id === campsiteId)[0];
         return <RenderCampsite campsite={campsite} />;
-    }  
+    }
 }
 
 export default CampsiteInfo;
