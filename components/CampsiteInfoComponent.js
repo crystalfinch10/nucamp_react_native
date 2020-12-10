@@ -1,10 +1,11 @@
 import React, { Component } from 'react';
-import { Text, View, ScrollView, Flatlist, Modal, Stylesheet, Button } from 'react-native';
+import { Text, View, ScrollView, FlatList, Modal, StyleSheet, Button } from 'react-native';
 import { Card, Icon, Rating, Input } from 'react-native-elements';
 import { connect } from 'react-redux';
 import { baseUrl } from '../shared/baseUrl';
 import { postFavorite } from '../redux/ActionCreators';
 import { postComment } from '../redux/ActionCreators';
+import * as Animatable from 'react-native-animatable';
 
 const mapStateToProps = state => {
     return {
@@ -25,32 +26,34 @@ function RenderCampsite(props) {
 
     if (campsite) {
         return (
-            <Card 
-                featuredTitle={campsite.name}
-                image={{uri: baseUrl + campsite.image}}
-            >
-                <Text style={{margin: 10}}>
-                    {campsite.description}
-                </Text>
-                <View style={styles.cardRow}>
-                    <Icon
-                        name={props.favorite ? 'heart':'heart-o'}
-                        type='font-awesome'
-                        color='#f50'
-                        raised
-                        reverse
-                        onPress={()=> props.markFavorite()}
-                    />
-                    <Icon
-                        name={'pencil'}
-                        type='font-awesome'
-                        color='#5637dd'
-                        raised
-                        reverse
-                        onPress={()=> props.onShowModal()}
-                    />
-                </View>
-            </Card>
+            <Animatable.View animation='fadeInDown' duration={2000} delay={1000}>
+                <Card 
+                    featuredTitle={campsite.name}
+                    image={{uri: baseUrl + campsite.image}}
+                >
+                    <Text style={{margin: 10}}>
+                        {campsite.description}
+                    </Text>
+                    <View style={styles.cardRow}>
+                        <Icon
+                            name={props.favorite ? 'heart':'heart-o'}
+                            type='font-awesome'
+                            color='#f50'
+                            raised
+                            reverse
+                            onPress={()=> props.markFavorite()}
+                        />
+                        <Icon
+                            name={'pencil'}
+                            type='font-awesome'
+                            color='#5637dd'
+                            raised
+                            reverse
+                            onPress={()=> props.onShowModal()}
+                        />
+                    </View>
+                </Card>
+            </Animatable.View>
         );
     }
     return <View />;
@@ -61,57 +64,32 @@ function RenderComments({comments}) {
     const renderCommentItem = ({item}) => {
         return (
             <View style={{margin: 10}}>
-                <Text style={{fontSize: 14}}>{item.text}</Text>
-                <Rating
-                    type='star'
-                    startingValue = {this.state.rating}
-                    ratingCount={5}
+                <Text style={{fontSize: 14}}>
+                    {item.text}
+                </Text>
+                <Rating 
+                    startingValue={item.rating}
                     imageSize={10}
-                    showRating
-                    onFinishRating={rating => this.setState({rating: rating})}
-                    style={{paddingVertical: 10}}
-                    />
-                <Input
-                    placeholder='Author'
-                    leftIcon={
-                        <Icon
-                        type='font-awesome'
-                        name='user-o'
-                        size={24}
-                        color='black'
-                        />
-                    }
-                    leftIconContainerStyle={{paddingRight:10}}
-                    onChangeText={author => this.setState({author:author})}
-                    value = {this.state.author}
+                    readonly
+                    style={{alignItems: 'flex-start', paddingVertical: '5%'}}
                 />
-                <Input
-                    placeholder='Comment'
-                    leftIcon={
-                        <Icon
-                        type='font-awesome'
-                        name='comment-o'
-                        size={24}
-                        color='black'
-                        />
-                    }
-                    leftIconContainerStyle={{paddingRight:10}}
-                    onChangeText={comment=> this.setState({text:comment})}
-                    value = {this.state.text}
-                />
-                <Text style={{fontSize: 12}}>`-- ${item.author}, {item.date}`</Text>
+                <Text style={{fontSize: 12}}>
+                    {`-- ${item.author}, ${item.date}`}
+                </Text>
             </View>
-        )
-    }
+        );
+    };
 
     return (
-        <Card title="Comments">
-            <Flatlist
-                data={comments}
-                renderItem={renderCommentItem}
-                keyExtractor={item => item.id.toString()}
-            />
-        </Card>
+        <Animatable.View animation='fadeInUp' duration={2000} delay={1000}>
+            <Card title="Comments">
+                <FlatList
+                    data={comments}
+                    renderItem={renderCommentItem}
+                    keyExtractor={item => item.id.toString()}
+                />
+            </Card>
+        </Animatable.View>
     )
 }
 
@@ -137,6 +115,7 @@ class CampsiteInfo extends Component {
 
     handleComment(campsiteId){
         this.props.postComment(campsiteId, this.state.rating, this.state.author, this.state.text)
+        this.toggleModal();
     }
 
     resetForm(){
@@ -153,8 +132,8 @@ class CampsiteInfo extends Component {
 
     render() {
         const campsiteId = this.props.navigation.getParam('campsiteId');
-        const campsite = this.state.campsites.campsites.filter(campsite => campsite.id === campsiteId)[0];
-        const comments = this.state.comments.comments.filter(comment => comment.campsiteId === campsiteId);
+        const campsite = this.props.campsites.campsites.filter(campsite => campsite.id === campsiteId)[0];
+        const comments = this.props.comments.comments.filter(comment => comment.campsiteId === campsiteId);
         return (
             <ScrollView>
                 <RenderCampsite 
@@ -172,14 +151,12 @@ class CampsiteInfo extends Component {
                 >
                     <View style={styles.modal}>
                         <Rating
-                            type='star'
-                            startingValue = {this.state.rating}
-                            ratingCount={5}
-                            imageSize={10}
                             showRating
+                            startingValue={this.state.rating}
+                            imageSize={40}
                             onFinishRating={rating => this.setState({rating: rating})}
-                            style={{alignSelf: flex-start}}
-                            />
+                            style={{paddingVertical: 10}}
+                        />
                         <Input
                             placeholder='Author'
                             leftIcon={
@@ -211,21 +188,20 @@ class CampsiteInfo extends Component {
                         <View style={{margin: 10}}>
                             <Button
                                 onPress={() => {
-                                    this.handleComment(campsiteId);
-                                    this.resetForm();
+                                    this.handleComment(campsiteId, this.state.rating, this.state.author, this.state.text);
+                                    this.resetForm()
                                 }}
-                                color="#808080"
-                                title="Cancel"
+                                color="#5637DD"
+                                title="Submit"
                             />
                         </View>
                         <View style={{margin: 10}}>
                             <Button
                                 onPress={() => {
                                     this.toggleModal();
-                                    this.resetForm()
                                 }}
-                                color="#5637DD"
-                                title="Submit"
+                                color="#808080"
+                                title="Cancel"
                             />
                         </View>
                     </View>
