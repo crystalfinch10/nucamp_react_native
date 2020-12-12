@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Text, View, ScrollView, FlatList, Modal, StyleSheet, Button, Alert, PanResponder } from 'react-native';
+import { Text, View, ScrollView, FlatList, Modal, StyleSheet, Button, Alert, PanResponder, Share } from 'react-native';
 import { Card, Icon, Rating, Input } from 'react-native-elements';
 import { connect } from 'react-redux';
 import { baseUrl } from '../shared/baseUrl';
@@ -27,6 +27,7 @@ function RenderCampsite(props) {
     const view = React.createRef();
 
     const recognizeDrag = ({dx}) => (dx < -200) ? true : false;
+    const recognizeComment = ({dx}) => (dx > 200) ? true : false;
 
     const panResponder = PanResponder.create({
         onStartShouldSetPanResponder: () => true,
@@ -54,10 +55,22 @@ function RenderCampsite(props) {
                     ],
                     { cancelable: false }
                 );
+            } else if (recognizeComment(gestureState)) {
+                props.onShowModal();
             }
             return true;
         }
     });
+
+    const shareCampsite = (title, message, url) => {
+        Share.share({
+            title: title,
+            message: `${title}: ${message} ${url}`,
+            url: url
+        },{
+            dialogTitle: 'Share ' + title
+        });
+    };
 
     if (campsite) {
         return (
@@ -90,6 +103,14 @@ function RenderCampsite(props) {
                             raised
                             reverse
                             onPress={()=> props.onShowModal()}
+                        />
+                        <Icon
+                            name={'share'}
+                            type='font-awesome'
+                            color='#5637DD'
+                            raised
+                            reverse
+                            onPress={() => shareCampsite(campsite.name, campsite.description, baseUrl + campsite.image)} 
                         />
                     </View>
                 </Card>
@@ -229,7 +250,7 @@ class CampsiteInfo extends Component {
                             <Button
                                 onPress={() => {
                                     this.handleComment(campsiteId, this.state.rating, this.state.author, this.state.text);
-                                    this.resetForm()
+                                    this.resetForm();
                                 }}
                                 color="#5637DD"
                                 title="Submit"
@@ -239,6 +260,7 @@ class CampsiteInfo extends Component {
                             <Button
                                 onPress={() => {
                                     this.toggleModal();
+                                    this.resetForm();
                                 }}
                                 color="#808080"
                                 title="Cancel"
@@ -253,7 +275,7 @@ class CampsiteInfo extends Component {
 
 const styles = StyleSheet.create({ 
     cardRow: {
-      alignItems: "flex-start",
+      alignItems: "center",
       justifyContent: "center",
       flex: 1,
       flexDirection: "row",
